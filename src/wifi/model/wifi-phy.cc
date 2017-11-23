@@ -31,6 +31,10 @@
 #include "ampdu-tag.h"
 #include "wifi-utils.h"
 #include "frame-capture-model.h"
+//----------------------------------------------------------------------------------------------------------------------
+// NETSYS: We are looking at the MAC header (hack) to find out the signal source here.
+#include "ns3/wifi-mac-header.h"
+//----------------------------------------------------------------------------------------------------------------------
 
 namespace ns3 {
 
@@ -2394,6 +2398,7 @@ WifiPhy::StartReceivePreambleAndHeader (Ptr<Packet> packet, double rxPowerW, Tim
       NS_FATAL_ERROR ("MCS value does not match NSS value: MCS = " << (uint16_t)txVector.GetMode ().GetMcsValue () << ", NSS = " << (uint16_t)txVector.GetNss ());
     }
 
+  // interference is added here for the whole rx duration.
   Ptr<InterferenceHelper::Event> event;
   event = m_interference.Add (packet,
                               txVector,
@@ -2413,6 +2418,7 @@ WifiPhy::StartReceivePreambleAndHeader (Ptr<Packet> packet, double rxPowerW, Tim
           return;
         }
     }
+
 
   MpduType mpdutype = tag.GetMpduType ();
   switch (m_state->GetState ())
@@ -3659,6 +3665,18 @@ WifiPhy::AbortCurrentReception ()
 void
 WifiPhy::StartRx (Ptr<Packet> packet, WifiTxVector txVector, MpduType mpdutype, double rxPowerW, Time rxDuration, Ptr<InterferenceHelper::Event> event)
 {
+  //--------------------------------------------------------------------------------------------------------------------
+  // NETSYS: We assume that a node can find out the signal source from preamble (e.g. BSS color)
+  // Here we decide whether we will continue to receive the packet or not.
+  bool continueRx = true;
+  WifiMacHeader hdr;
+  packet->PeekHeader(hdr);
+  NS_LOG_UNCOND("My Address: " << m_device->GetAddress() << " dst: " << hdr.GetAddr1() << " equal? " << (hdr.GetAddr1() == m_device->GetAddress()));
+  //if(hdr.GetAddr1().IsGroup() == false && hdr.GetAddr1() != m_self) {
+  //  continueRx = false;
+  //}
+  //--------------------------------------------------------------------------------------------------------------------
+
   NS_LOG_FUNCTION (this << packet << txVector << (uint16_t)mpdutype << rxPowerW << rxDuration);
   if (rxPowerW > GetEdThresholdW ()) //checked here, no need to check in the payload reception (current implementation assumes constant rx power over the packet duration)
     {
@@ -3710,17 +3728,28 @@ WifiPhy::StartRx (Ptr<Packet> packet, WifiTxVector txVector, MpduType mpdutype, 
       NotifyRxBegin (packet);
       m_interference.NotifyRxStart ();
     
-      if (preamble != WIFI_PREAMBLE_NONE)
-        {
-          NS_ASSERT (m_endPlcpRxEvent.IsExpired ());
-          Time preambleAndHeaderDuration = CalculatePlcpPreambleAndHeaderDuration (txVector);
-          m_endPlcpRxEvent = Simulator::Schedule (preambleAndHeaderDuration, &WifiPhy::StartReceivePacket, this,
-                                                  packet, txVector, mpdutype, event);
-        }
 
-      NS_ASSERT (m_endRxEvent.IsExpired ());
-      m_endRxEvent = Simulator::Schedule (rxDuration, &WifiPhy::EndReceive, this,
-                                          packet, preamble, mpdutype, event);
+      // if the packet had a wifi preamble, schedule the beginning of packet reception after preamble duration
+      //----------------------------------------------------------------------------------------------------------------
+      // NETSYS: if the node decides not to continue receiving the packet, abort packet reception after preamble
+      if(continueRx) {
+        if (preamble != WIFI_PREAMBLE_NONE)
+          {
+            NS_ASSERT (m_endPlcpRxEvent.IsExpired ());
+            Time preambleAndHeaderDuration = CalculatePlcpPreambleAndHeaderDuration (txVector);
+            m_endPlcpRxEvent = Simulator::Schedule (preambleAndHeaderDuration, &WifiPhy::StartReceivePacket, this,
+                                                    packet, txVector, mpdutype, event);
+          }
+
+        NS_ASSERT (m_endRxEvent.IsExpired ());
+        m_endRxEvent = Simulator::Schedule (rxDuration, &WifiPhy::EndReceive, this,
+                                            packet, preamble, mpdutype, event);
+      }
+      else {
+        Time preambleAndHeaderDuration = CalculatePlcpPreambleAndHeaderDuration (txVector);
+        m_endPlcpRxEvent = Simulator::Schedule(preambleAndHeaderDuration, &WifiPhy::AbortCurrentReception, this);
+      }
+      //----------------------------------------------------------------------------------------------------------------
     }
   else
     {
