@@ -56,11 +56,29 @@ The <code>GetAccessGrantStart</code> function first checks if the node is curren
 
 1. If the node is not receiving,
 
-1.1. If last reception was a success, 
+- If last reception was a success, 
 
 <code> rxAccessStart = m_lastRxEnd + m_sifs </code>
 
-1.2. If last reception was a failure,
+- If last reception was a failure,
 
 <code> rxAccessStart = m_lastRxEnd + m_sifs + m_eifsNoDifs </code>
+
+2. If the node is receiving,
+
+<code> rxAccessStart = m_lastRxStart + m_lastRxDuration + m_sifs
+
+
+The variable <code>rxAccessStart</code> indicates the time when the last *packet reception ended or will end*. Here, three variables are used.
+
+1. <code>m_lastRxStart</code>
+2. <code>m_lastRxEnd</code>
+3. <code>m_lastRxDuration</code>
+
+
+<code>m_lastRxStart</code> is set in the function <code>NotifyRxStartNow</code>. <code>m_lastRxEnd</code> is set in the function <code>NotifyRxEndOkNow</code> and <code>NotifyRxEndErrorNow</code>. <code>m_lastRxDuration</code> is set in <code>NotifyRxStartNow</code>. 
+
+If the packet reception is finished abruptly, both <code>m_lastRxEnd</code> and <code>m_lastRxDuration</code> should be updated. In <code>NotifyTxStartNow</code>, these two variables are updated if the node is currently receiving a packet (<code>m_rxing == true</code>). Also, in <code>NotifySwitchingStartNow</code>, the variables are updated if the node has to stop receiving the packet in order to perform channel switching.
+
+
 
