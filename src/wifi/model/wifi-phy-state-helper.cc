@@ -467,6 +467,18 @@ WifiPhyStateHelper::SwitchFromRxEndError (Ptr<Packet> packet, double snr)
 }
 
 void
+WifiPhyStateHelper::SwitchFromRxAbort (void)
+{
+  NS_LOG_FUNCTION (this);
+  NS_ASSERT (IsStateRx ());
+  NS_ASSERT (m_rxing);
+  m_endRx = Simulator::Now ();
+  DoSwitchFromRx ();
+  NS_ASSERT (!IsStateRx ());
+}
+
+
+void
 WifiPhyStateHelper::DoSwitchFromRx (void)
 {
   NS_LOG_FUNCTION (this);
@@ -557,17 +569,6 @@ WifiPhyStateHelper::SwitchFromSleep (Time duration)
     {
       NotifyMaybeCcaBusyStart (m_endCcaBusy - now);
     }
-}
-
-void
-WifiPhyStateHelper::SwitchFromRxAbort (void)
-{
-  NS_LOG_FUNCTION (this);
-  NS_ASSERT (IsStateRx ());
-  NS_ASSERT (m_rxing);
-  m_endRx = Simulator::Now ();
-  DoSwitchFromRx ();
-  NS_ASSERT (!IsStateRx ());
 }
 
 } //namespace ns3

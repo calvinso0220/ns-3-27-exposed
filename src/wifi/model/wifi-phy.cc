@@ -3647,6 +3647,8 @@ WifiPhy::SwitchMaybeToCcaBusy (void)
 void
 WifiPhy::AbortCurrentReception ()
 {
+  NS_LOG_UNCOND(Simulator::Now() << " " << m_device->GetAddress() << " AbortCurrentReception");
+
   NS_LOG_FUNCTION (this);
   if (m_endPlcpRxEvent.IsRunning ())
     {
@@ -3658,6 +3660,7 @@ WifiPhy::AbortCurrentReception ()
     }
   NotifyRxDrop (m_currentEvent->GetPacket ());
   m_interference.NotifyRxEnd ();
+  NS_LOG_UNCOND(Simulator::Now() << " " << m_device->GetAddress() << " SwitchFromRxAbort");
   m_state->SwitchFromRxAbort ();
   m_currentEvent = 0;
 }
@@ -3671,10 +3674,9 @@ WifiPhy::StartRx (Ptr<Packet> packet, WifiTxVector txVector, MpduType mpdutype, 
   bool continueRx = true;
   WifiMacHeader hdr;
   packet->PeekHeader(hdr);
-  NS_LOG_UNCOND("My Address: " << m_device->GetAddress() << " dst: " << hdr.GetAddr1() << " equal? " << (hdr.GetAddr1() == m_device->GetAddress()));
-  //if(hdr.GetAddr1().IsGroup() == false && hdr.GetAddr1() != m_self) {
-  //  continueRx = false;
-  //}
+  if(hdr.GetAddr1().IsGroup() == false && hdr.GetAddr1() != m_device->GetAddress()) {
+    continueRx = false;
+  }
   //--------------------------------------------------------------------------------------------------------------------
 
   NS_LOG_FUNCTION (this << packet << txVector << (uint16_t)mpdutype << rxPowerW << rxDuration);
@@ -3723,6 +3725,8 @@ WifiPhy::StartRx (Ptr<Packet> packet, WifiTxVector txVector, MpduType mpdutype, 
 
       NS_LOG_DEBUG ("sync to signal (power=" << rxPowerW << "W)");
       m_currentEvent = event;
+
+      NS_LOG_UNCOND(Simulator::Now() << " " << m_device->GetAddress() << " SwitchToRx");
       m_state->SwitchToRx (rxDuration);
       NS_ASSERT (m_endPlcpRxEvent.IsExpired ());
       NotifyRxBegin (packet);

@@ -156,6 +156,10 @@ DcfManager::SetupLow (Ptr<MacLow> low)
 {
   NS_LOG_FUNCTION (this << low);
   low->RegisterDcf (this);
+
+// NETSYS: keep pointer to MacLow module to get the MAC address --------------------------------------------------------
+  m_low = low;
+//----------------------------------------------------------------------------------------------------------------------
 }
 
 void
@@ -574,6 +578,9 @@ DcfManager::NotifyTxStartNow (Time duration)
   NS_LOG_FUNCTION (this << duration);
   if (m_rxing)
     {
+      if(Simulator::Now() - m_lastRxStart > m_sifs) {
+        NS_LOG_UNCOND(Simulator::Now() << " " << m_low->GetAddress() << " m_lastRxStart: " << m_lastRxStart);
+      }
       //this may be caused only if PHY has started to receive a packet
       //inside SIFS, so, we check that lastRxStart was maximum a SIFS ago
       NS_ASSERT (Simulator::Now () - m_lastRxStart <= m_sifs);

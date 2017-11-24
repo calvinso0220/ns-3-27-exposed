@@ -349,6 +349,11 @@ private:
   uint32_t m_slotTimeUs;        //!< the slot time in microseconds
   Time m_sifs;                  //!< the SIFS time
   PhyListener* m_phyListener;   //!< the phy listener
+
+// NETSYS: pointer to MacLow module to get the MAC address -------------------------------------------------------------
+  Ptr<MacLow> m_low;
+//----------------------------------------------------------------------------------------------------------------------
+ 
 };
 
 } //namespace ns3
