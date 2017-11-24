@@ -89,6 +89,7 @@ public:
    * same as NotifyRxEndOk.
    */
   void NotifyRxEndError (void);
+  void NotifyRxEndCancel (void);
 
   /**
    * \brief Switches the WifiRadioEnergyModel to TX state and switches back to

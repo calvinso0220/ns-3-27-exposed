@@ -472,6 +472,17 @@ WifiRadioEnergyModelPhyListener::NotifyRxEndOk (void)
 }
 
 void
+WifiRadioEnergyModelPhyListener::NotifyRxEndCancel (void)
+{
+  NS_LOG_FUNCTION (this);
+  if (m_changeStateCallback.IsNull ())
+    {
+      NS_FATAL_ERROR ("WifiRadioEnergyModelPhyListener:Change state callback not set!");
+    }
+  m_changeStateCallback (WifiPhy::IDLE);
+}
+
+void
 WifiRadioEnergyModelPhyListener::NotifyRxEndError (void)
 {
   NS_LOG_FUNCTION (this);

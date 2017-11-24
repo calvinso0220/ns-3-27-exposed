@@ -56,6 +56,10 @@ public:
   {
     m_dcf->NotifyRxEndErrorNow ();
   }
+  void NotifyRxEndCancel (void)
+  {
+    m_dcf->NotifyRxEndCancelNow ();
+  }
   void NotifyTxStart (Time duration, double txPowerDbm)
   {
     m_dcf->NotifyTxStartNow (duration);
@@ -569,6 +573,16 @@ DcfManager::NotifyRxEndErrorNow (void)
   NS_LOG_DEBUG ("rx end error");
   m_lastRxEnd = Simulator::Now ();
   m_lastRxReceivedOk = false;
+  m_rxing = false;
+}
+
+// NETSYS
+void DcfManager::NotifyRxEndCancelNow(void) {
+  NS_LOG_FUNCTION(this);
+  NS_LOG_DEBUG("rx end cancel");
+  m_lastRxEnd = Simulator::Now();
+  m_lastRxDuration = m_lastRxEnd - m_lastRxStart;
+  m_lastRxReceivedOk = true;		// This might need to be modified later.
   m_rxing = false;
 }
 

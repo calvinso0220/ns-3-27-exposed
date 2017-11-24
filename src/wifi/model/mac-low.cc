@@ -235,6 +235,9 @@ public:
   void NotifyRxEndError (void)
   {
   }
+  void NotifyRxEndCancel(void)
+  {
+  }
   void NotifyTxStart (Time duration, double txPowerDbm)
   {
   }

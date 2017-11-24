@@ -266,6 +266,9 @@ private:
    * Notify all WifiPhyListener that the reception was not successful.
    */
   void NotifyRxEndError (void);
+// NETSYS --------------------------------------------------------------------------------------------------------------
+  void NotifyRxEndCancel(void);
+//----------------------------------------------------------------------------------------------------------------------
   /**
    * Notify all WifiPhyListener that the CCA has started for the given duration.
    *

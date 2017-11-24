@@ -110,6 +110,8 @@ public:
    * _not_ been successfully received.
    */
   virtual void NotifyRxEndError (void) = 0;
+//NETSYS
+  virtual void NotifyRxEndCancel(void) = 0;
   /**
    * \param duration the expected transmission duration.
    * \param txPowerDbm the nominal tx power in dBm

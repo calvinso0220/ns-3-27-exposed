@@ -139,6 +139,7 @@ public:
    * completed unsuccessfully.
    */
   void NotifyRxEndErrorNow (void);
+  void NotifyRxEndCancelNow(void);
   /**
    * \param duration expected duration of transmission
    *

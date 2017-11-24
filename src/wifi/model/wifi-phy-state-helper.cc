@@ -259,6 +259,14 @@ WifiPhyStateHelper::NotifyRxEndError (void)
 }
 
 void
+WifiPhyStateHelper::NotifyRxEndCancel(void) {
+  NS_LOG_FUNCTION(this);
+  for(Listeners::const_iterator i = m_listeners.begin(); i != m_listeners.end(); i++) {
+    (*i)->NotifyRxEndCancel();
+  }
+}
+
+void
 WifiPhyStateHelper::NotifyMaybeCcaBusyStart (Time duration)
 {
   NS_LOG_FUNCTION (this);
@@ -473,6 +481,7 @@ WifiPhyStateHelper::SwitchFromRxAbort (void)
   NS_ASSERT (IsStateRx ());
   NS_ASSERT (m_rxing);
   m_endRx = Simulator::Now ();
+  NotifyRxEndCancel();
   DoSwitchFromRx ();
   NS_ASSERT (!IsStateRx ());
 }
