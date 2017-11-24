@@ -66,7 +66,7 @@ The <code>GetAccessGrantStart</code> function first checks if the node is curren
 
 2. If the node is receiving,
 
-<code> rxAccessStart = m_lastRxStart + m_lastRxDuration + m_sifs
+<code> rxAccessStart = m_lastRxStart + m_lastRxDuration + m_sifs </code>
 
 
 The variable <code>rxAccessStart</code> indicates the time when the last *packet reception ended or will end*. Here, three variables are used.
@@ -80,5 +80,54 @@ The variable <code>rxAccessStart</code> indicates the time when the last *packet
 
 If the packet reception is finished abruptly, both <code>m_lastRxEnd</code> and <code>m_lastRxDuration</code> should be updated. In <code>NotifyTxStartNow</code>, these two variables are updated if the node is currently receiving a packet (<code>m_rxing == true</code>). Also, in <code>NotifySwitchingStartNow</code>, the variables are updated if the node has to stop receiving the packet in order to perform channel switching.
 
+
+
+So if we would like to cancel reception after receiving the preamble, we need to be sure we are correctly updating those three variables. There is a function called <code>AbortCurrentReception</code>, which looks like the following:
+
+```cpp
+void
+WifiPhy::AbortCurrentReception ()
+{
+  NS_LOG_UNCOND(Simulator::Now() << " " << m_device->GetAddress() << " AbortCurrentReception");
+
+  NS_LOG_FUNCTION (this);
+  if (m_endPlcpRxEvent.IsRunning ())
+    {
+      m_endPlcpRxEvent.Cancel ();
+    }
+  if (m_endRxEvent.IsRunning ())
+    {
+      m_endRxEvent.Cancel ();
+    }
+  NotifyRxDrop (m_currentEvent->GetPacket ());
+  m_interference.NotifyRxEnd ();
+  NS_LOG_UNCOND(Simulator::Now() << " " << m_device->GetAddress() << " SwitchFromRxAbort");
+  m_state->SwitchFromRxAbort ();
+  m_currentEvent = 0;
+}
+```
+
+Basically, this function takes care of the following variables:
+
+* <code>m_endPlcpRxEvent</code>
+* <code>m_endRxEvent</code>
+* <code>m_currentEvent</code>
+
+Also, this function calls two functions in the other modules, InterferenceHelper and WifiPhyStateHelper. In <code>WifiPhyStateHelper::SwitchFromRxAbort</code>, neither <code>NotifyRxEndOk</code> nor <code>NotifyRxEndError</code> is called. Which means, <code>m_lastRxEnd</code> is not set from here. The reason is because <code>AbortCurrentReception</code> is only called from one place: another packet is received while the node is receiving a packet.
+
+So how about we add a line calling <code>NotifyRxEndCancel</code> which is a new function but similar to <code>NotifyRxEndOk</code>. This function eventually calls <code>DcfManager::NotifyRxEndCancelNow()</code> which is similar to <code>DcfManager::NotifyRxEndOkNow</code>. The only difference is that since the reception has been aborted abruptly, <code>m_lastRxDuration</code> should be corrected. Here is the code for the new function.
+
+```cpp
+void DcfManager::NotifyRxEndCancelNow(void) {
+  NS_LOG_FUNCTION(this);
+  NS_LOG_DEBUG("rx end cancel");
+  m_lastRxEnd = Simulator::Now();
+  m_lastRxDuration = m_lastRxEnd - m_lastRxStart;
+  m_lastRxReceivedOk = true;        // This might need to be modified later.
+  m_rxing = false;
+}
+```
+
+One problem we might need to address is that after receiving preamble (20us), the node may need to wait for DIFS again before starting to count down once more.
 
 
