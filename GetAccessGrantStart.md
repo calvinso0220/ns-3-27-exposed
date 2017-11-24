@@ -55,8 +55,12 @@ The function <code>GetBackoffStartFor</code> is the important function. This fun
 The <code>GetAccessGrantStart</code> function first checks if the node is currently receiving a packet. The Time variable <code>rxAccessStart</code> is set depending on this state (<code>m_rxing</code>). 
 
 1. If the node is not receiving,
+
 1.1. If last reception was a success, 
+
 <code> rxAccessStart = m_lastRxEnd + m_sifs </code>
+
 1.2. If last reception was a failure,
+
 <code> rxAccessStart = m_lastRxEnd + m_sifs + m_eifsNoDifs </code>
 
